@@ -34,7 +34,7 @@ def on_message_put(client, userdata, message):
     if(ID == nodes[-1]):
         if(key >= ID or key <= nodes[0]):
              DHT[key] = randomNumber
-    elif(key <= ID and key >= nodes[index-1]):
+    elif(key >= ID and key <= nodes[index+1]):
          DHT[key] = randomNumber
     print(DHT)
    
