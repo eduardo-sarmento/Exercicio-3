@@ -23,6 +23,6 @@ client.message_callback_add('rsv/get_ok', on_message_get_ok)
 while True:
     randNumber = randint(0, (2**32)-1)
     client.publish("rsv/put",  payload=str(randNumber)+","+str(randNumber))
-    randNumber = randint(0, (2**32)-1)
+    #randNumber = randint(0, (2**32)-1)
     client.publish("rsv/get", randNumber)
     time.sleep(10)
