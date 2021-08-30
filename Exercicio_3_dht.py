@@ -11,51 +11,55 @@ mqttBroker ="127.0.0.1"
 def on_message(client, userdata, message):
     print("received message: " ,str(message.payload.decode("utf-8")))
 
+
 def on_message_join(client, userdata, message):
     print("joined: " ,str(message.payload.decode("utf-8")))
     nodes.append(int(message.payload.decode("utf-8")))
-    if len(nodes) == 8:
-        # Esse e o primeiro no, ele tera a lista completa de nos 
-        # Se torna um super-no e inicializa todos os outros com a lista
-        nodes.sort()
-        print("I am the super node, DHT started!")
-        print(nodes)
-        payload = ','.join(str(e) for e in nodes)
+    nodes.sort()
+    payload = str(ID)
+    client.publish("rsv/join_response", payload)
+    if len(nodes) == 2:
         client.publish("rsv/start", payload)
         
+def on_message_join_response(client, userdata, message):
+
+    response_ID = int(message.payload.decode("utf-8"))
+    if(not nodes.count(response_ID) == 1):
+        nodes.append(response_ID)
+        nodes.sort()
+    print(nodes)
 
 def on_message_start(client, userdata, message):
-    info = str(message.payload.decode("utf-8"))
-    nodes = list(map(int, info.split(',')))
-    print("Got node list from super node!")
-    print(nodes)
+    print("Starting Process")
     client.subscribe("rsv/put")
     client.subscribe("rsv/get")
     client.message_callback_add('rsv/put', on_message_put)
     client.message_callback_add('rsv/get', on_message_get)
-        
 
 def on_message_put(client, userdata, message):
     info = str(message.payload.decode("utf-8"))
     info = info.split(',')
     key = int(info[0])
     randomNumber = int(info[1])
-    #print(str(ID) + " received message (put): " ,key, randomNumber)
+    print(str(ID) + " received message (put): " ,key, randomNumber)
     index = nodes.index(ID)
-    if(ID == nodes[0] and key <= ID):
+    if(ID == nodes[0] and (key <= ID or key > nodes[-1])):
+        print("aqui ID == nodes[0]")
         DHT[key] = randomNumber
     elif(key <= ID and key > nodes[index-1]):
+        print("aqui key <= ID ")
         DHT[key] = randomNumber
     else:
+        print("aqui else")
         return
     print("Put sucessful: key=", key, "myID=", ID, "myIndex=", index, "prevID", nodes[index-1])
     client.publish("rsv/put_ok", ID)
-
 def on_message_get(client, userdata, message):
     key = int(message.payload.decode("utf-8"))
+
     index = nodes.index(ID)
     val = 0
-    if(ID == nodes[0] and key <= ID):
+    if(ID == nodes[0] and  (key <= ID or key > nodes[-1])):
         val = DHT[key]
     elif(key <= ID and key > nodes[index-1]):
         val = DHT[key]
@@ -64,23 +68,6 @@ def on_message_get(client, userdata, message):
     print("Just got: ", key)
     client.publish("rsv/get_ok", val)
 
-def run():
-    client = mqtt.Client("Node_" + str(ID))
-    client.connect(mqttBroker)
-
-    client.loop_start()
-
-    client.subscribe("rsv/join")
-    client.subscribe("rsv/start")
-    client.subscribe("rsv/put")
-    client.subscribe("rsv/get")
-    client.message_callback_add('rsv/join', on_message_join)
-    client.message_callback_add('rsv/start', on_message_start)
-    client.publish("rsv/join", ID)
-    print("Just published " + str(ID) + " to topic rsv/join")
-
-    time.sleep(30000)
-    client.loop_stop()
 
 client = mqtt.Client("Node_" + str(ID))
 client.connect(mqttBroker)
@@ -88,10 +75,12 @@ client.connect(mqttBroker)
 client.loop_start()
 
 client.subscribe("rsv/join")
+client.subscribe("rsv/join_response")
 client.subscribe("rsv/start")
 client.subscribe("rsv/put")
 client.subscribe("rsv/get")
 client.message_callback_add('rsv/join', on_message_join)
+client.message_callback_add('rsv/join_response', on_message_join_response)
 client.message_callback_add('rsv/start', on_message_start)
 client.publish("rsv/join", ID)
 print("Just published " + str(ID) + " to topic rsv/join")

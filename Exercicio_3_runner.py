@@ -9,7 +9,7 @@ def main():
 
     # Cria processos que dividem a dht entre eles
     for i in range(0, process_number):
-        process_dht = multiprocessing.Process(target=dht)
+        process_dht = multiprocessing.Process(target=dht.run())
         jobs.append(process_dht)
 
     # Inicia todos os jobs
