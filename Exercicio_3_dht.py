@@ -11,24 +11,25 @@ mqttBroker ="127.0.0.1"
 def on_message(client, userdata, message):
     print("received message: " ,str(message.payload.decode("utf-8")))
 
-
+# Join e publicado quando processo inicia
 def on_message_join(client, userdata, message):
     print("joined: " ,str(message.payload.decode("utf-8")))
     nodes.append(int(message.payload.decode("utf-8")))
     nodes.sort()
     payload = str(ID)
     client.publish("rsv/join_response", payload)
-    if len(nodes) == 2:
+    if len(nodes) == 8:
         client.publish("rsv/start", payload)
-        
-def on_message_join_response(client, userdata, message):
 
+# Nos mais novos adicionam os mais antigos atravez do join_response
+def on_message_join_response(client, userdata, message):
     response_ID = int(message.payload.decode("utf-8"))
     if(not nodes.count(response_ID) == 1):
         nodes.append(response_ID)
         nodes.sort()
     print(nodes)
 
+# Quando ha oito nos na dht pode-se inciar o servico!
 def on_message_start(client, userdata, message):
     print("Starting Process")
     client.subscribe("rsv/put")
@@ -36,6 +37,8 @@ def on_message_start(client, userdata, message):
     client.message_callback_add('rsv/put', on_message_put)
     client.message_callback_add('rsv/get', on_message_get)
 
+# Checa se o numero pertence ao seu intervalo
+# Em caso afirmativo, salva o numero e publica mensagem de sucesso
 def on_message_put(client, userdata, message):
     info = str(message.payload.decode("utf-8"))
     info = info.split(',')
@@ -50,10 +53,13 @@ def on_message_put(client, userdata, message):
         print("aqui key <= ID ")
         DHT[key] = randomNumber
     else:
-        print("aqui else")
+        print("ERROR")
         return
-    print("Put sucessful: key=", key, "myID=", ID, "myIndex=", index, "prevID", nodes[index-1])
+    print("PUT served: key=", key, "myID=", ID, "myIndex=", index, "prevID", nodes[index-1])
     client.publish("rsv/put_ok", ID)
+
+# Checa se o numero pertence ao seu intervalo
+# Em caso afirmativo, retorna o numero e publica mensagem de sucesso
 def on_message_get(client, userdata, message):
     key = int(message.payload.decode("utf-8"))
 
@@ -65,7 +71,7 @@ def on_message_get(client, userdata, message):
         val = DHT[key]
     else:
         return
-    print("Just got: ", key)
+    print("GET served: key=", key, "myID=", ID, "myIndex=", index, "prevID", nodes[index-1])
     client.publish("rsv/get_ok", val)
 
 
