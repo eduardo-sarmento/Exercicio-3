@@ -31,7 +31,7 @@ def on_message_join_response(client, userdata, message):
 
 # Quando ha oito nos na dht pode-se inciar o servico!
 def on_message_start(client, userdata, message):
-    print("Starting Process")
+    print("Starting DHT service!")
     client.subscribe("rsv/put")
     client.subscribe("rsv/get")
     client.message_callback_add('rsv/put', on_message_put)
@@ -53,7 +53,6 @@ def on_message_put(client, userdata, message):
         print("aqui key <= ID ")
         DHT[key] = randomNumber
     else:
-        print("ERROR")
         return
     print("PUT served: key=", key, "myID=", ID, "myIndex=", index, "prevID", nodes[index-1])
     client.publish("rsv/put_ok", ID)

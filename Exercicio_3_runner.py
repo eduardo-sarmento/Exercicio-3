@@ -2,6 +2,9 @@ import multiprocessing
 import sys
 import Exercicio_3_dht as dht
 
+# Tentativa de automatizacao da criacao da dht
+# Atualmente nao funciona
+
 process_number = 8
 
 jobs = []

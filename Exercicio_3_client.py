@@ -29,7 +29,7 @@ client.message_callback_add('rsv/get_ok', on_message_get_ok)
 # Cliente gera numero aleatorio, coloca na DHT, depois pega de volta
 while True:
     randNumber = randint(0, (2**32)-1)
-    print(randNumber)
+    print("GENERATED: ", randNumber)
     client.publish("rsv/put",  payload=str(randNumber)+","+str(randNumber))
     client.publish("rsv/get", randNumber)
     time.sleep(10)
